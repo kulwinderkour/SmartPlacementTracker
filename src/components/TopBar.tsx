@@ -1,8 +1,9 @@
-import { Search, Bell, User } from 'lucide-react'
+import { Search, User } from 'lucide-react'
 import { Input } from './ui/Input'
 import { Button } from './ui/Button'
 import { useTheme } from '@/lib/theme'
 import { Moon, Sun } from 'lucide-react'
+import NotificationDropdown from './NotificationDropdown'
 
 export default function TopBar() {
   const { theme, setTheme } = useTheme()
@@ -42,10 +43,7 @@ export default function TopBar() {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative">
-          <Bell className="h-5 w-5 text-gray-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </Button>
+        <NotificationDropdown />
 
         {/* User Avatar */}
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:scale-105 transition-transform">

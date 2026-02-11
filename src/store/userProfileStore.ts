@@ -23,7 +23,7 @@ const defaultProfile: UserProfile = {
 
 export const useUserProfileStore = create<UserProfileStore>()(
   persist(
-    (set: any, get: any): UserProfileStore => ({
+    (set): UserProfileStore => ({
       profile: null,
       setProfile: (profile: UserProfile) => set({ profile }),
       updateProfile: (updates: Partial<UserProfile>) =>

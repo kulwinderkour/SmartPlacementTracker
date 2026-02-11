@@ -7,7 +7,7 @@ import Analytics from '@/pages/Analytics'
 import Settings from '@/pages/Settings'
 import ApplicationBoard from '@/pages/ApplicationBoard'
 import Notifications from '@/pages/Notifications'
-import PreparationNotes from '@/pages/PreparationNotes'
+import ResumeManager from '@/pages/ResumeManager'
 import Recommendations from '@/pages/Recommendations'
 import Motivation from '@/pages/Motivation'
 import AIChat from '@/pages/AIChat'
@@ -32,7 +32,7 @@ function App() {
             <Route path="application-board" element={<ApplicationBoard />} />
             <Route path="whatsapp-parser" element={<WhatsAppParser />} />
             <Route path="notifications" element={<Notifications />} />
-            <Route path="preparation-notes" element={<PreparationNotes />} />
+            <Route path="preparation-notes" element={<ResumeManager />} />
             <Route path="recommendations" element={<Recommendations />} />
             <Route path="motivation" element={<Motivation />} />
             <Route path="ai-chat" element={<AIChat />} />
