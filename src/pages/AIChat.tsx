@@ -10,7 +10,6 @@ import {
   Cpu,
   RefreshCw,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
@@ -123,25 +122,29 @@ export default function AIChat() {
   }
 
   return (
-    <div className="p-8 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">AI Interview Assistant</h1>
-          <p className="text-muted-foreground mt-2">
-            Get help with technical questions, interview prep, and improvement suggestions
-          </p>
+      <div className="flex justify-between items-center px-6 py-4 border-b bg-card/50 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+            <Bot className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">AI Interview Assistant</h1>
+            <p className="text-xs text-muted-foreground">
+              Always here to help with your preparation
+            </p>
+          </div>
         </div>
         <Button onClick={clearChat} variant="outline" size="sm">
           <RefreshCw className="mr-2 h-4 w-4" />
-          Clear Chat
+          Clear
         </Button>
       </div>
 
       {/* Quick Topics */}
-      <div className="mb-6">
-        <h3 className="text-sm font-medium mb-3">Quick Topics</h3>
-        <div className="flex gap-2 flex-wrap">
+      <div className="px-6 py-3 border-b bg-card/30">
+        <div className="flex gap-2 overflow-x-auto">
           {[
             { icon: Code, label: 'DSA', color: 'text-blue-600' },
             { icon: Database, label: 'Database', color: 'text-green-600' },
@@ -155,6 +158,7 @@ export default function AIChat() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickQuestion(`Tell me about ${topic.label}`)}
+                className="flex-shrink-0"
               >
                 <Icon className={cn('mr-2 h-4 w-4', topic.color)} />
                 {topic.label}
@@ -164,109 +168,107 @@ export default function AIChat() {
         </div>
       </div>
 
-      {/* Chat Container */}
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((message) => (
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={cn(
+              'flex gap-3',
+              message.role === 'user' ? 'justify-end' : 'justify-start'
+            )}
+          >
+            {message.role === 'assistant' && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+            )}
             <div
-              key={message.id}
               className={cn(
-                'flex gap-3',
-                message.role === 'user' ? 'justify-end' : 'justify-start'
+                'max-w-[70%] rounded-2xl px-4 py-3 shadow-sm',
+                message.role === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-br-sm'
+                  : 'bg-card border rounded-bl-sm'
               )}
             >
-              {message.role === 'assistant' && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-primary" />
-                </div>
-              )}
-              <div
-                className={cn(
-                  'max-w-[80%] rounded-lg px-4 py-3',
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
-                )}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                {message.suggestions && message.suggestions.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {message.suggestions.map((suggestion, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleQuickQuestion(suggestion)}
-                        className="text-xs px-3 py-1 rounded-full bg-background hover:bg-accent transition-colors"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {message.role === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <User className="h-5 w-5 text-primary-foreground" />
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              {message.suggestions && message.suggestions.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {message.suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleQuickQuestion(suggestion)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-accent transition-colors border"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          ))}
-          {isTyping && (
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Bot className="h-5 w-5 text-primary" />
+            {message.role === 'user' && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <User className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div className="bg-muted rounded-lg px-4 py-3">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" />
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce delay-100" />
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce delay-200" />
-                </div>
-              </div>
+            )}
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+              <Bot className="h-5 w-5 text-white" />
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </CardContent>
-
-        {/* Quick Questions */}
-        {messages.length <= 1 && (
-          <div className="px-6 pb-4 border-t pt-4">
-            <p className="text-sm text-muted-foreground mb-3">Try asking:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickQuestions.map((question, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleQuickQuestion(question)}
-                  className="text-left text-sm p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
-                >
-                  <Lightbulb className="h-4 w-4 inline mr-2 text-yellow-600" />
-                  {question}
-                </button>
-              ))}
+            <div className="bg-card border rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" />
+                <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce delay-100" />
+                <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce delay-200" />
+              </div>
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* Input */}
-        <div className="border-t p-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleSend()
-            }}
-            className="flex gap-2"
-          >
-            <Input
-              placeholder="Ask me anything about interviews, coding, or preparation..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" size="icon" disabled={!input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+      {/* Quick Questions (shown when chat is empty) */}
+      {messages.length <= 1 && (
+        <div className="px-6 pb-4 border-t bg-card/30 pt-4">
+          <p className="text-sm font-medium mb-3">💡 Try asking:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {quickQuestions.map((question, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleQuickQuestion(question)}
+                className="text-left text-sm p-3 rounded-lg bg-card border hover:bg-accent transition-colors"
+              >
+                <Lightbulb className="h-4 w-4 inline mr-2 text-yellow-600" />
+                {question}
+              </button>
+            ))}
+          </div>
         </div>
-      </Card>
+      )}
+
+      {/* Input */}
+      <div className="border-t px-6 py-4 bg-card/50 backdrop-blur">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleSend()
+          }}
+          className="flex gap-3 max-w-4xl mx-auto"
+        >
+          <Input
+            placeholder="Ask me anything about interviews, coding, or preparation..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 h-12 rounded-full px-6"
+          />
+          <Button type="submit" size="icon" disabled={!input.trim()} className="h-12 w-12 rounded-full">
+            <Send className="h-5 w-5" />
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }

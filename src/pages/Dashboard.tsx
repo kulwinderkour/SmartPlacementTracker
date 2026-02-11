@@ -1,531 +1,559 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { format, formatDistanceToNow, isFuture, differenceInDays } from 'date-fns'
+import { format } from 'date-fns'
 import {
+  Briefcase,
   Calendar,
   TrendingUp,
-  CheckCircle2,
-  Clock,
+  XCircle,
+  Building2,
+  Bookmark,
   Plus,
-  AlertCircle,
-  Search,
-  Flame,
-  Smile,
-  Meh,
-  Frown,
-  Zap,
-  Target,
-  RefreshCw,
-  Sparkles,
-  Heart,
-  ListChecks,
+  FileUp,
   BarChart3,
+  Clock,
+  Users,
+  Bell,
+  CheckCircle2,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { useOpportunitiesStore } from '@/store/opportunitiesStore'
-import { useUserProfileStore } from '@/store/userProfileStore'
-import { UserProfile } from '@/types'
 import AddOpportunityModal from '@/components/AddOpportunityModal'
-import { cn } from '@/lib/utils'
+import { Opportunity } from '@/types'
 
-const motivationalQuotes = [
-  { mood: 'excellent', quote: "You're crushing it! Keep this momentum going! 🚀" },
-  { mood: 'excellent', quote: "Success is yours! Your hard work is paying off! 🌟" },
-  { mood: 'good', quote: "Great progress! One step closer to your dream job! 💪" },
-  { mood: 'good', quote: "You're doing awesome! Stay focused and keep going! ✨" },
-  { mood: 'okay', quote: "Every application brings you closer. Keep pushing forward! 🎯" },
-  { mood: 'okay', quote: "Believe in yourself! You've got what it takes! 💫" },
-  { mood: 'stressed', quote: "Take a deep breath. You're stronger than this challenge! 🌈" },
-  { mood: 'stressed', quote: "Difficult roads lead to beautiful destinations. Hang in there! 🌸" },
-  { mood: 'overwhelmed', quote: "One task at a time. You've got this! Break it down! 🧘" },
-  { mood: 'overwhelmed', quote: "Rest is productive too. Take care of yourself first! ❤️" },
-  { mood: null, quote: "Your future is created by what you do today! 🎓" },
+interface User {
+  _id: string;
+  name: string;
+  createdAt: string;
+}
+
+interface Reminder {
+  _id: string;
+  title: string;
+  description?: string;
+  dueDate: string;
+  priority: string;
+  category: string;
+  status: string;
+  createdAt: string;
+}
+
+const statusColumns = [
+  { id: 'applied', label: 'Applied', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+  { id: 'online-assessment', label: 'Assessment', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
+  { id: 'interview-scheduled', label: 'Interview', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
+  { id: 'offer-received', label: 'Offer', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+  { id: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
 ]
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { opportunities, initializeSampleData } = useOpportunitiesStore()
-  const { profile, updateMood, updateStreak } = useUserProfileStore()
-  
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>([])
+  const [reminders, setReminders] = useState<Reminder[]>([])
 
-  // Initialize sample data and update streak on mount
   useEffect(() => {
     initializeSampleData()
-    updateStreak()
-    setIsLoading(false)
-  }, [initializeSampleData, updateStreak])
-
-  // Filter opportunities by search
-  const filteredOpportunities = useMemo(() => {
-    if (!searchQuery.trim()) return opportunities
+    setTimeout(() => setIsLoading(false), 300)
     
-    const query = searchQuery.toLowerCase()
-    return opportunities.filter(
-      (opp) =>
-        opp.companyName.toLowerCase().includes(query) ||
-        opp.role.toLowerCase().includes(query)
-    )
-  }, [opportunities, searchQuery])
+    // Fetch users from backend
+    fetchUsers()
+    // Fetch reminders from backend
+    fetchReminders()
+  }, [initializeSampleData])
+  
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/users')
+      if (response.ok) {
+        const data = await response.json()
+        setUsers(data.users)
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+    }
+  }
+
+  const fetchReminders = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/parser/reminders?status=pending')
+      if (response.ok) {
+        const data = await response.json()
+        setReminders(data.reminders || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch reminders:', error)
+    }
+  }
+
+  const handleCompleteReminder = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/parser/reminders/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'completed' }),
+      })
+
+      if (response.ok) {
+        // Refresh reminders
+        fetchReminders()
+      }
+    } catch (error) {
+      console.error('Failed to update reminder:', error)
+    }
+  }
 
   // Calculate stats
   const stats = useMemo(() => {
-    const total = filteredOpportunities.length
-    const applied = filteredOpportunities.filter((o) =>
-      ['applied', 'online-assessment', 'interview-scheduled', 'interview-completed'].includes(o.status)
+    const totalApplications = opportunities.length
+    const interviewsScheduled = opportunities.filter(o => 
+      o.status === 'interview-scheduled' || o.status === 'online-assessment'
     ).length
-    const offers = filteredOpportunities.filter((o) => o.status === 'offer-received').length
-    const upcoming = filteredOpportunities.filter((o) =>
-      o.deadline && isFuture(new Date(o.deadline)) && differenceInDays(new Date(o.deadline), new Date()) <= 7
-    ).length
+    const offersReceived = opportunities.filter(o => o.status === 'offer-received').length
+    const rejections = opportunities.filter(o => o.status === 'rejected').length
+    const activeCompanies = new Set(opportunities.map(o => o.companyName)).size
+    const savedJobs = opportunities.filter(o => o.status === 'saved').length
 
-    return { total, applied, offers, upcoming }
-  }, [filteredOpportunities])
+    return {
+      totalApplications,
+      interviewsScheduled,
+      offersReceived,
+      rejections,
+      activeCompanies,
+      savedJobs,
+    }
+  }, [opportunities])
 
-  // Upcoming deadlines (next 5, within 7 days)
-  const upcomingDeadlines = useMemo(() => {
-    return filteredOpportunities
-      .filter((o) => o.deadline && isFuture(new Date(o.deadline)))
-      .sort((a, b) =>
-        new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime()
-      )
-      .slice(0, 5)
-  }, [filteredOpportunities])
+  // Group opportunities by status for kanban
+  const kanbanData = useMemo(() => {
+    const grouped: Record<string, Opportunity[]> = {}
+    statusColumns.forEach(col => {
+      grouped[col.id] = opportunities.filter(o => o.status === col.id)
+    })
+    return grouped
+  }, [opportunities])
 
-  // Recent activity from activity logs
+  // Recent activity (last 8 activity logs)
   const recentActivity = useMemo(() => {
-    const allLogs = filteredOpportunities.flatMap((opp) =>
-      opp.activityLog.map((log) => ({
+    const allActivities = opportunities.flatMap(opp => 
+      opp.activityLog.map(log => ({
         ...log,
         companyName: opp.companyName,
         role: opp.role,
-        status: opp.status,
       }))
     )
-    
-    return allLogs
+    return allActivities
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 5)
-  }, [filteredOpportunities])
-
-  // Pending tasks (unchecked checklist items)
-  const pendingTasks = useMemo(() => {
-    const tasks = filteredOpportunities.flatMap((opp) =>
-      opp.checklists
-        .filter((check) => !check.completed)
-        .map((check) => ({
-          ...check,
-          companyName: opp.companyName,
-          oppId: opp.id,
-        }))
-    )
-    return tasks.slice(0, 5)
-  }, [filteredOpportunities])
-
-  // Progress calculation
-  const progress = useMemo(() => {
-    if (stats.applied === 0) return 0
-    return Math.round((stats.offers / stats.applied) * 100)
-  }, [stats])
-
-  // Get motivational quote based on mood
-  const currentQuote = useMemo(() => {
-    const moodQuotes = motivationalQuotes.filter(
-      (q) => q.mood === profile?.mood || q.mood === null
-    )
-    return moodQuotes[currentQuoteIndex % moodQuotes.length]?.quote || motivationalQuotes[0].quote
-  }, [profile?.mood, currentQuoteIndex])
-
-  const handleMoodUpdate = (mood: UserProfile['mood']) => {
-    updateMood(mood)
-  }
-
-  const refreshQuote = () => {
-    setCurrentQuoteIndex((prev) => prev + 1)
-  }
+      .slice(0, 8)
+  }, [opportunities])
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-8">
-      {/* Header with Search */}
-      <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
-        <div className="flex-1">
-          <h1 className="text-4xl font-bold tracking-tight">
-            Welcome to Your Placement Journey! 👋
-          </h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl">
-            Track applications, prepare for interviews, and ace your placements with AI-powered assistance.
-          </p>
-        </div>
-        
-        <div className="flex gap-3 w-full lg:w-auto">
-          <div className="relative flex-1 lg:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search opportunities..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button onClick={() => setIsModalOpen(true)} size="lg">
-            <Plus className="mr-2 h-5 w-5" />
-            Add
-          </Button>
-        </div>
-      </div>
-
-      {/* Motivation & Streak Widget */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-200 dark:border-purple-800">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-600" />
-                <CardTitle>Daily Motivation</CardTitle>
-              </div>
-              <Button variant="ghost" size="icon" onClick={refreshQuote}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-medium italic mb-4">{currentQuote}</p>
-            
-            {/* Mood Check-in */}
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">How are you feeling today?</p>
-              <div className="flex gap-2">
-                {[
-                  { mood: 'excellent' as const, icon: Sparkles, label: 'Excellent', color: 'text-green-600' },
-                  { mood: 'good' as const, icon: Smile, label: 'Good', color: 'text-blue-600' },
-                  { mood: 'okay' as const, icon: Meh, label: 'Okay', color: 'text-yellow-600' },
-                  { mood: 'stressed' as const, icon: Frown, label: 'Stressed', color: 'text-orange-600' },
-                  { mood: 'overwhelmed' as const, icon: AlertCircle, label: 'Overwhelmed', color: 'text-red-600' },
-                ].map(({ mood, icon: Icon, label, color }) => (
-                  <button
-                    key={mood}
-                    onClick={() => handleMoodUpdate(mood)}
-                    className={cn(
-                      'flex-1 p-3 rounded-lg border-2 transition-all hover:scale-105',
-                      profile?.mood === mood
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50'
-                    )}
-                    title={label}
-                  >
-                    <Icon className={cn('h-6 w-6 mx-auto', color)} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-500/10 to-yellow-500/10 border-orange-200 dark:border-orange-800">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-orange-600" />
-              <CardTitle>Your Streak</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-4xl font-bold text-orange-600">
-                  {profile?.streak || 0} 🔥
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {profile?.streak === 0 ? 'Start your streak today!' : 'Days active'}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Keep it going!</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Last active: {profile?.lastActiveDate
-                    ? formatDistanceToNow(new Date(profile.lastActiveDate), { addSuffix: true })
-                    : 'Never'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Opportunities</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Tracked companies</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Applications Sent</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.applied}</div>
-            <p className="text-xs text-muted-foreground">In various stages</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Offers Received</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.offers}</div>
-            <p className="text-xs text-muted-foreground">Pending decisions</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Urgent Deadlines</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.upcoming}</div>
-            <p className="text-xs text-muted-foreground">Need attention (7 days)</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Progress Bar Widget */}
-      {stats.applied > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
-              <CardTitle>Application Success Rate</CardTitle>
-            </div>
-            <CardDescription>Your conversion from applications to offers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{stats.offers} offers</span>
-                <span className="font-semibold">{progress}%</span>
-                <span>{stats.applied} applications</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+    <div className="p-6 space-y-6">
+      {/* Registered Users */}
+      <Card className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border-gray-200 dark:border-gray-700">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            Registered Users ({users.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {users.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No users registered yet</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {users.map((user) => (
                 <div
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs text-white font-semibold"
-                  style={{ width: `${Math.max(progress, 5)}%` }}
+                  key={user._id}
+                  className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50"
                 >
-                  {progress}%
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                {progress < 20 && "Keep applying! Every rejection brings you closer to acceptance."}
-                {progress >= 20 && progress < 50 && "You're making good progress! Keep it up!"}
-                {progress >= 50 && "Excellent conversion rate! You're doing great!"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Upcoming Deadlines */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Upcoming Deadlines
-            </CardTitle>
-            <CardDescription>Don't miss these important dates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {upcomingDeadlines.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No upcoming deadlines</p>
-                <p className="text-sm mt-1">Add opportunities to track deadlines</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {upcomingDeadlines.map((opp) => {
-                  const daysLeft = differenceInDays(new Date(opp.deadline!), new Date())
-                  const isUrgent = daysLeft <= 3
-                  
-                  return (
-                    <div
-                      key={opp.id}
-                      className={cn(
-                        'p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md',
-                        isUrgent
-                          ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                          : 'bg-card hover:bg-accent/50'
-                      )}
-                      onClick={() => navigate('/opportunities')}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <p className="font-medium text-sm">{opp.companyName}</p>
-                          <p className="text-xs text-muted-foreground">{opp.role}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className={cn(
-                            'text-sm font-medium',
-                            isUrgent && 'text-red-600 dark:text-red-400'
-                          )}>
-                            {format(new Date(opp.deadline!), 'MMM dd')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days`}
-                          </p>
-                        </div>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>Your latest updates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentActivity.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No activity yet</p>
-                <p className="text-sm mt-1">Start adding opportunities to see updates</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentActivity.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/opportunities')}
-                  >
-                    <div
-                      className={cn(
-                        'rounded-full p-2 mt-0.5',
-                        log.type === 'status_change' && log.status === 'offer-received' && 'bg-green-100 dark:bg-green-900/30',
-                        log.type === 'status_change' && log.status === 'rejected' && 'bg-red-100 dark:bg-red-900/30',
-                        log.type === 'created' && 'bg-blue-100 dark:bg-blue-900/30',
-                        !['offer-received', 'rejected'].includes(log.status || '') && log.type !== 'created' && 'bg-purple-100 dark:bg-purple-900/30'
-                      )}
-                    >
-                      {log.type === 'created' && <Plus className="h-3 w-3" />}
-                      {log.type === 'status_change' && <CheckCircle2 className="h-3 w-3" />}
-                      {log.type === 'note' && <AlertCircle className="h-3 w-3" />}
-                    </div>
-                    <div className="flex-1 space-y-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{log.companyName}</p>
-                      <p className="text-xs text-muted-foreground">{log.action}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : 'Recently joined'}
                       </p>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* WhatsApp Parser Reminders */}
+      {reminders.length > 0 && (
+        <Card className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border-gray-200 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-purple-600" />
+                Upcoming Reminders ({reminders.length})
+              </div>
+              <Button
+                onClick={() => navigate('/whatsapp-parser')}
+                variant="outline"
+                size="sm"
+              >
+                View Parser
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {reminders.slice(0, 6).map((reminder) => {
+                const getPriorityColor = (priority: string) => {
+                  switch (priority) {
+                    case 'urgent':
+                      return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300';
+                    case 'high':
+                      return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300';
+                    case 'medium':
+                      return 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300';
+                    case 'low':
+                      return 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-700/30 dark:text-gray-300';
+                    default:
+                      return 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-700/30 dark:text-gray-300';
+                  }
+                };
+
+                const getCategoryIcon = (category: string) => {
+                  switch (category) {
+                    case 'assignment':
+                      return '📝';
+                    case 'exam':
+                      return '📚';
+                    case 'meeting':
+                      return '👥';
+                    case 'interview':
+                      return '🎯';
+                    case 'deadline':
+                      return '⏰';
+                    case 'event':
+                      return '📅';
+                    default:
+                      return '📌';
+                  }
+                };
+
+                const isOverdue = new Date(reminder.dueDate) < new Date();
+
+                return (
+                  <div
+                    key={reminder._id}
+                    className={`p-4 rounded-lg border ${
+                      isOverdue
+                        ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50'
+                    } hover:shadow-md transition-shadow`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-start gap-2 flex-1">
+                        <span className="text-2xl flex-shrink-0">{getCategoryIcon(reminder.category)}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2">
+                            {reminder.title}
+                          </h3>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleCompleteReminder(reminder._id)}
+                        className="flex-shrink-0 p-1 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+                        title="Mark as complete"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(reminder.priority)}`}>
+                        {reminder.priority.toUpperCase()}
+                      </span>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 border border-purple-300 dark:bg-purple-900/30 dark:text-purple-300">
+                        {reminder.category}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <Clock className="h-3 w-3" />
+                      <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>
+                        {format(new Date(reminder.dueDate), 'MMM dd, yyyy')}
+                        {isOverdue && ' (Overdue)'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {reminders.length > 6 && (
+              <div className="mt-4 text-center">
+                <Button
+                  onClick={() => navigate('/whatsapp-parser')}
+                  variant="outline"
+                >
+                  View All {reminders.length} Reminders
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
+      )}
+      
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* Total Applications */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow rounded-xl border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.totalApplications}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Pending Tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ListChecks className="h-5 w-5" />
-              Pending Tasks
-            </CardTitle>
-            <CardDescription>Unchecked checklist items</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {pendingTasks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No pending tasks</p>
-                <p className="text-sm mt-1">You're all caught up! 🎉</p>
+        {/* Interviews Scheduled */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow rounded-xl border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Interviews Scheduled</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.interviewsScheduled}</p>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                    onClick={() => navigate('/opportunities')}
-                  >
-                    <div className="mt-0.5">
-                      <div className="w-4 h-4 rounded border-2 border-gray-400" />
-                    </div>
-                    <div className="flex-1 space-y-1 min-w-0">
-                      <p className="text-sm font-medium">{task.text}</p>
-                      <p className="text-xs text-muted-foreground">{task.companyName}</p>
-                    </div>
-                  </div>
-                ))}
-                {filteredOpportunities.flatMap(o => o.checklists.filter(c => !c.completed)).length > 5 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => navigate('/opportunities')}
-                  >
-                    View all tasks
-                  </Button>
-                )}
+              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               </div>
-            )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Offers Received */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow rounded-xl border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Offers Received</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.offersReceived}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rejections */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow rounded-xl border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rejections</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.rejections}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Active Companies */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow rounded-xl border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active Companies</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.activeCompanies}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Saved Jobs */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow rounded-xl border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Saved Jobs</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.savedJobs}</p>
+              </div>
+              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+                <Bookmark className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Empty State */}
-      {opportunities.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="rounded-full bg-primary/10 p-4 mb-4">
-              <Plus className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Start Your Journey</h3>
-            <p className="text-muted-foreground text-center max-w-md mb-6">
-              Add your first job opportunity to begin tracking your placement progress
-            </p>
-            <Button onClick={() => setIsModalOpen(true)} size="lg">
-              Add First Opportunity
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Kanban Board - Takes 2 columns */}
+        <div className="lg:col-span-2">
+          <Card className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border-gray-200 dark:border-gray-700">
+            <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Application Status Board</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {statusColumns.map(column => (
+                  <div key={column.id} className="flex-shrink-0 w-64">
+                    <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">{column.label}</h3>
+                        <span className="text-xs bg-white dark:bg-gray-800 px-2 py-1 rounded-full font-medium text-gray-600 dark:text-gray-400">
+                          {kanbanData[column.id]?.length || 0}
+                        </span>
+                      </div>
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {kanbanData[column.id]?.map(opp => (
+                          <div
+                            key={opp.id}
+                            className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => navigate('/opportunities')}
+                          >
+                            <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-1">{opp.companyName}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{opp.role}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500 dark:text-gray-500">
+                                {opp.deadline ? format(new Date(opp.deadline), 'MMM dd') : 'No deadline'}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${column.color}`}>
+                                {column.label}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {(!kanbanData[column.id] || kanbanData[column.id].length === 0) && (
+                          <p className="text-xs text-gray-400 dark:text-gray-600 text-center py-4">No applications</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Analytics Chart */}
+          <Card className="mt-6 bg-white dark:bg-gray-800 shadow-sm rounded-xl border-gray-200 dark:border-gray-700">
+            <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Applications Over Time
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="h-64 flex items-center justify-center text-gray-400 dark:text-gray-600">
+                <div className="text-center">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
+                  <p className="text-sm">Analytics chart coming soon</p>
+                  <p className="text-xs mt-1">Track your application trends</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Sidebar - Quick Actions & Recent Activity */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border-gray-200 dark:border-gray-700">
+            <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              <Button
+                onClick={() => setIsAddModalOpen(true)}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md rounded-lg h-11"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Application
+              </Button>
+              <Button
+                onClick={() => navigate('/opportunities')}
+                variant="outline"
+                className="w-full border-gray-300 dark:border-gray-600 rounded-lg h-11"
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Add Company
+              </Button>
+              <Button
+                onClick={() => navigate('/preparation-notes')}
+                variant="outline"
+                className="w-full border-gray-300 dark:border-gray-600 rounded-lg h-11"
+              >
+                <FileUp className="h-4 w-4 mr-2" />
+                Upload Resume
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <Card className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border-gray-200 dark:border-gray-700">
+            <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {recentActivity.length > 0 ? (
+                  recentActivity.map(activity => (
+                    <div key={activity.id} className="flex gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-900 dark:text-white font-medium">
+                          {activity.action}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {activity.companyName} - {activity.role}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">
+                          {format(new Date(activity.timestamp), 'MMM dd, h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-8">
+                    No recent activity
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Add Opportunity Modal */}
-      <AddOpportunityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddOpportunityModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
     </div>
   )
 }
