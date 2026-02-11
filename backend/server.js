@@ -13,6 +13,7 @@ import opportunityRoutes from './routes/opportunityRoutes.js'; // Import routes
 import authRoutes from './routes/authRoutes.js'; // Import auth routes
 import parserRoutes from './routes/parserRoutes.js'; // Import parser routes
 import analyticsRoutes from './routes/analyticsRoutes.js'; // Import analytics routes
+import resumeRoutes from './routes/resumeRoutes.js'; // Import resume routes
 import { initializeScheduler } from './services/notificationScheduler.js'; // Import scheduler
 
 // Load environment variables from .env file
@@ -81,6 +82,10 @@ app.use('/api/parser', parserRoutes);
 // Use analytics routes
 // All routes in analyticsRoutes will be prefixed with /api/analytics
 app.use('/api/analytics', analyticsRoutes);
+
+// Use resume routes
+// All routes in resumeRoutes will be prefixed with /api/resume
+app.use('/api/resume', resumeRoutes);
 
 // Use opportunity routes
 // All routes in opportunityRoutes will be prefixed with /api/opportunities

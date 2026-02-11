@@ -11,7 +11,7 @@ function parseWhatsAppMessage(text) {
   // Extract dates using various formats
   const datePatterns = [
     // Format: 25/12/2024, 25-12-2024, 25.12.2024
-    /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/g,
+    /(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/g,
     // Format: December 25, 2024 or Dec 25, 2024
     /(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),?\s+(\d{4})/gi,
     // Format: 25th December, 25 Dec
