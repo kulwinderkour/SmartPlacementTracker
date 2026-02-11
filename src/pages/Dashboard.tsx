@@ -12,7 +12,6 @@ import {
   FileUp,
   BarChart3,
   Clock,
-  Users,
   Bell,
   CheckCircle2,
 } from 'lucide-react'
@@ -22,11 +21,11 @@ import { useOpportunitiesStore } from '@/store/opportunitiesStore'
 import AddOpportunityModal from '@/components/AddOpportunityModal'
 import { Opportunity } from '@/types'
 
-interface User {
-  _id: string;
-  name: string;
-  createdAt: string;
-}
+// interface User {
+//   _id: string;
+//   name: string;
+//   createdAt: string;
+// }
 
 interface Reminder {
   _id: string;
@@ -52,7 +51,7 @@ export default function Dashboard() {
   const { opportunities, initializeSampleData } = useOpportunitiesStore()
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [users, setUsers] = useState<User[]>([])
+  // const [users, setUsers] = useState<User[]>([])
   const [reminders, setReminders] = useState<Reminder[]>([])
 
   useEffect(() => {
@@ -69,8 +68,8 @@ export default function Dashboard() {
     try {
       const response = await fetch('http://localhost:5000/api/auth/users')
       if (response.ok) {
-        const data = await response.json()
-        setUsers(data.users)
+        // const data = await response.json()
+        // setUsers(data.users)
       }
     } catch (error) {
       console.error('Failed to fetch users:', error)
