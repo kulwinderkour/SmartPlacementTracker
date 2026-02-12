@@ -29,17 +29,17 @@ export default function Sidebar() {
 
   return (
     <div className={cn(
-      "flex flex-col bg-gradient-to-b from-purple-600 via-purple-500 to-indigo-600 text-white shadow-xl transition-all duration-300 ease-in-out relative",
+      "flex flex-col bg-gradient-to-b from-[#001233] via-[#001a4d] to-[#0a2540] text-white shadow-2xl transition-all duration-300 ease-in-out relative",
       isCollapsed ? "w-20" : "w-64"
     )}>
       {/* Logo */}
-      <div className="flex h-20 items-center justify-center px-6 border-b border-white/10">
+      <div className="flex h-20 items-center justify-center px-6 border-b border-white/20">
         {!isCollapsed ? (
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             Smart Placement
           </h1>
         ) : (
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             SP
           </h1>
         )}
@@ -48,7 +48,7 @@ export default function Sidebar() {
       {/* Toggle Button */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-24 h-6 w-6 rounded-full bg-white text-purple-600 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-10 hover:scale-110"
+        className="absolute -right-3 top-24 h-6 w-6 rounded-full bg-white text-[#001233] shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-10 hover:scale-110"
         title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {isCollapsed ? (
@@ -67,10 +67,10 @@ export default function Sidebar() {
               key={item.name}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300',
                 isActive
-                  ? 'bg-white text-purple-600 shadow-lg'
-                  : 'text-white/80 hover:bg-white/10 hover:text-white',
+                  ? 'bg-white text-[#001233] shadow-lg border-l-4 border-white'
+                  : 'text-white hover:bg-white/15 hover:text-white border-l-4 border-transparent',
                 isCollapsed && 'justify-center'
               )}
               title={isCollapsed ? item.name : ''}
@@ -84,8 +84,8 @@ export default function Sidebar() {
       
       {/* Footer */}
       {!isCollapsed && (
-        <div className="border-t border-white/10 p-4">
-          <p className="text-xs text-white/60 text-center">
+        <div className="border-t border-white/20 p-4">
+          <p className="text-xs text-white/50 text-center font-medium">
             © 2026 Smart Placement
           </p>
         </div>

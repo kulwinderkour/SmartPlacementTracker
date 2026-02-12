@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import tailwindAnimate from 'tailwindcss-animate';
+
 export default {
   darkMode: ['class'],
   content: [
@@ -7,6 +9,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -41,20 +46,31 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        'dark-charcoal': '#1A1A1A',
+        'subtle-purple': '#6B46C1',
+        'brand-gradient-from': '#8A2BE2',
+        'brand-gradient-to': '#4B0082',
+        'glass-edge': 'rgba(255, 255, 255, 0.1)',
+        'stat-purple': '#A78BFA',
+        'stat-amber': '#FBBF24',
+        'stat-green': '#34D399',
+        'stat-red': '#F87171',
+        'stat-blue': '#60A5FA',
+        'stat-indigo': '#818CF8',
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: `16px`,
+        md: `12px`,
+        sm: '8px',
       },
       keyframes: {
         'accordion-down': {
-          from: { height: '0' },
+          from: { height: 0 },
           to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
           from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: '0' },
+          to: { height: 0 },
         },
       },
       animation: {
@@ -63,5 +79,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindAnimate],
 }
