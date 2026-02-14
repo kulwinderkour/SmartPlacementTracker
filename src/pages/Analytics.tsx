@@ -137,7 +137,7 @@ export default function Analytics() {
                     <h3 className="text-sm font-bold text-white uppercase tracking-wider">Interview</h3>
                     <span className="bg-white/[0.15] text-[11px] font-bold px-2.5 py-1 rounded-lg text-white">1</span>
                   </div>
-                  <KanbanCard company="Google" role="Software Engineer" tag="L3" />
+                  <KanbanCard company="Google" role="Software Engineer" tag="L3"/>
                 </div>
                 {/* Offer Column */}
                 <div className="bg-white/[0.03] p-5 rounded-2xl border border-white/[0.12]">
